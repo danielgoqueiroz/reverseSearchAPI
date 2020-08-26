@@ -39,6 +39,6 @@ app.get("/reverseSearch", async (req, res) => {
 });
 
 // Run server
-server.listen(port, () => {
+server.listen(process.env.PORT || port, () => {
   console.log(`Iniciando API de Crawler na porta[${port}]`);
 });
