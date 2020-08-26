@@ -12,8 +12,7 @@ const md5sum = crypto.createHash("md5");
 const reverseSearch = require("./services/reverseSearch");
 
 app.get("/", (req, res) => {
-    res.status(200).send("Api funcionando");
-  }
+  res.status(200).send("Api funcionando");
 });
 
 app.get("/reverseSearch", async (req, res) => {
