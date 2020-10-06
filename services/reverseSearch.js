@@ -1,4 +1,5 @@
 const puppeteer = require("puppeteer");
+const querystring = require("querystring");
 
 const URL_GOOGLE_IMAGE_SEARCH = "https://www.google.com/imghp?hl=pt-BR";
 
@@ -7,12 +8,13 @@ const INPUT_SEARCH_SELECTOR = "#Ycyxxc";
 const SEARCH_BUTTON_REQUEST_SELECTOR = "#aoghAf > input";
 
 const RESULTADO_TITULO_SELECTOR =
-  "#rso > div:nth-child(INDEX) > div > div.r > a > h3";
-const RESULTADO_LINK_CONTEUDO = "#rso > div:nth-child(INDEX) > div > div.r > a";
+  "#rso > div:nth-child(INDEX) > div > div.yuRUbf > a > h3 > span";
+const RESULTADO_LINK_CONTEUDO =
+  "#rso > div:nth-child(INDEX) > div > div.yuRUbf > a";
 const RESULTADO_DATA_CONTEUDO =
-  "#rso > div:nth-child(INDEX) > div > div.s > div:nth-child(2) > span > span";
+  "#rso > div:nth-child(INDEX) > div > div.IsZvec > div:nth-child(2) > span > span.f";
 const RESULTADO_IMAGEM_SELECTOR =
-  "#rso > div:nth-child(INDEX) > div > div.s > div:nth-child(1) > div > a";
+  "#rso > div:nth-child(INDEX) > div > div.IsZvec > div:nth-child(1) > div > a";
 const SELECTOR_NAVIGATORS_NEXT = "#pnnext";
 
 const COUNTER_SELECTOR = "g";
@@ -31,6 +33,7 @@ async function search(link) {
       let resultsPage = await extraiInformacoesDaPagina(page);
       resultados = resultados.concat(resultsPage);
     }
+    console.log(resultados);
     return resultados;
   } catch (err) {
     console.log(err);
@@ -53,53 +56,56 @@ async function existetemProximaPagina(page) {
 async function extraiInformacoesDaPagina(page) {
   let resultsPages = [];
   let listLength = await extraiQuantidadeDeResultados(page);
-  for (let i = 0; i < listLength + 5; i++) {
-    let titulo_selector = RESULTADO_TITULO_SELECTOR.replace("INDEX", i);
-    let titulo = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.innerHTML : element;
-    }, titulo_selector);
-
+  for (let i = 1; i < listLength + 5; i++) {
     let imagem_selector = RESULTADO_IMAGEM_SELECTOR.replace("INDEX", i);
     let imagem = await page.evaluate((sel) => {
       let element = document.querySelector(sel);
       return element ? element.getAttribute("href") : element;
     }, imagem_selector);
 
-    let link_selector = RESULTADO_LINK_CONTEUDO.replace("INDEX", i);
-    let link = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.getAttribute("href") : element;
-    }, link_selector);
+    if (imagem != null) {
+      let imagemLink = querystring.parse(imagem.split("?")[1]);
+      let imagemLinkToSave = imagemLink.imgurl;
+      let titulo_selector = RESULTADO_TITULO_SELECTOR.replace("INDEX", i);
+      let titulo = await page.evaluate((sel) => {
+        let element = document.querySelector(sel);
+        return element ? element.innerHTML : element;
+      }, titulo_selector);
 
-    let data_selector = RESULTADO_DATA_CONTEUDO.replace("INDEX", i);
-    let dataRaw = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.innerHTML : element;
-    }, data_selector);
+      let link_selector = RESULTADO_LINK_CONTEUDO.replace("INDEX", i);
+      let link = await page.evaluate((sel) => {
+        let element = document.querySelector(sel);
+        return element ? element.getAttribute("href") : element;
+      }, link_selector);
 
-    let size = "";
-    let data = "";
-    if (dataRaw != null) {
-      let dataRawSplited = dataRaw.split(" - ");
-      if (dataRawSplited[0]) {
-        size = dataRawSplited[0];
+      let data_selector = RESULTADO_DATA_CONTEUDO.replace("INDEX", i);
+      let dataRaw = await page.evaluate((sel) => {
+        let element = document.querySelector(sel);
+        return element ? element.innerHTML : element;
+      }, data_selector);
+
+      let size = "";
+      let data = "";
+      if (dataRaw != null) {
+        let dataRawSplited = dataRaw.split(" · ");
+        if (dataRawSplited[1]) {
+          data = dataRawSplited[1];
+          data = data.replace(" — ", "");
+        }
+        if (dataRawSplited[0]) {
+          size = dataRawSplited[0];
+        }
       }
-      if (dataRawSplited[1]) {
-        data = dataRawSplited[1];
+      let resultPage = {
+        title: titulo,
+        image: imagemLinkToSave,
+        page: link,
+        date: data,
+        size: size,
+      };
+      if (ehResultadoValido(resultPage)) {
+        resultsPages.push(resultPage);
       }
-    }
-
-    let resultPage = {
-      titulo: titulo,
-      imagem: imagem,
-      link: link,
-      data: data,
-      size: size,
-    };
-
-    if (ehResultadoValido(resultPage)) {
-      resultsPages.push(resultPage);
     }
   }
   return resultsPages;
@@ -107,9 +113,9 @@ async function extraiInformacoesDaPagina(page) {
 
 function ehResultadoValido(resultado) {
   return !(
-    resultado.titulo == null ||
-    resultado.imagem == null ||
-    resultado.link == null
+    resultado.title == null ||
+    resultado.image == null ||
+    resultado.page == null
   );
 }
 

@@ -30,6 +30,7 @@ app.get("/reverseSearch", async (req, res) => {
         if (err) throw err;
         console.log("json salvo!");
       });
+      console.log(response);
       res.status(200).send(response);
     });
   } else {
