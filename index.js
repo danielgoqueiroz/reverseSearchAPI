@@ -4,7 +4,7 @@ const http = require("http");
 const server = http.createServer(app);
 const port = 3000;
 Cache = require("cache");
-cache = new Cache(100 * 1000); // Create a cache with 10 second TTL
+const cache = new Cache(100 * 1000); // Create a cache with 10 second TTL
 const fs = require("fs");
 var crypto = require("crypto");
 const md5sum = crypto.createHash("md5");
@@ -21,10 +21,13 @@ app.get("/reverseSearch", async (req, res) => {
 
   if (localData == null) {
     console.log("Realizando crawler");
-    await reverseSearch.search(link).then((response) => {
+    await reverseSearch.search(link).then(response => {
       cache.put(link, JSON.stringify(response));
-      var hash = crypto.createHash("md5").update(link).digest("hex");
-      fs.writeFile(`json/${hash}.json`, JSON.stringify(response), function (
+      var hash = crypto
+        .createHash("md5")
+        .update(link)
+        .digest("hex");
+      fs.writeFile(`json/${hash}.json`, JSON.stringify(response), function(
         err
       ) {
         if (err) throw err;
