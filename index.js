@@ -9,7 +9,16 @@ const fs = require("fs");
 var crypto = require("crypto");
 const md5sum = crypto.createHash("md5");
 
-const reverseSearch = require("./services/reverseSearch");
+const reverseSearch = require("./api/controller/reverseSearchController");
+
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
 
 const cors = require("cors");
 app.use((req, res, next) => {
@@ -34,12 +43,14 @@ app.get("/reverseSearch", async (req, res) => {
     await reverseSearch.search(link).then((response) => {
       cache.put(link, JSON.stringify(response));
       var hash = crypto.createHash("md5").update(link).digest("hex");
-      fs.writeFile(`json/${hash}.json`, JSON.stringify(response), function (
-        err
-      ) {
-        if (err) throw err;
-        console.log("json salvo!");
-      });
+      fs.writeFile(
+        `api/resources/json/${hash}.json`,
+        JSON.stringify(response),
+        function (err) {
+          if (err) throw err;
+          console.log("json salvo!");
+        }
+      );
       console.log(response);
       res.status(200).send(response);
     });
