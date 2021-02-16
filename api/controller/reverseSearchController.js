@@ -5,16 +5,16 @@ const URL_GOOGLE_IMAGE_SEARCH = "https://www.google.com/imghp?hl=pt-BR";
 
 const BUTTON_SEARCH_SELECTOR = "#sbtc > div > div.dRYYxd > div.LM8x9c";
 const INPUT_SEARCH_SELECTOR = "#Ycyxxc";
-const SEARCH_BUTTON_REQUEST_SELECTOR = "#aoghAf > input";
+const SEARCH_BUTTON_REQUEST_SELECTOR = "#RZJ9Ub";
 
 const RESULTADO_TITULO_SELECTOR =
-  "#rso > div:nth-child(INDEX) > div > div.yuRUbf > a > h3 > span";
+  "#rso > div > div:nth-child(INDEX) > div > div.yuRUbf > a > h3 > span";
 const RESULTADO_LINK_CONTEUDO =
-  "#rso > div:nth-child(INDEX) > div > div.yuRUbf > a";
+  "#rso > div > div:nth-child(10) > div > div.yuRUbf > a";
 const RESULTADO_DATA_CONTEUDO =
-  "#rso > div:nth-child(INDEX) > div > div.IsZvec > div:nth-child(2) > span > span.f";
+  "#rso > div > div:nth-child(INDEX) > div > div.IsZvec > div:nth-child(2) > span > span.f";
 const RESULTADO_IMAGEM_SELECTOR =
-  "#rso > div:nth-child(INDEX) > div > div.IsZvec > div:nth-child(1) > div > a";
+  "#rso > div > div:nth-child(INDEX) > div > div.IsZvec > div:nth-child(1) > div > a";
 const SELECTOR_NAVIGATORS_NEXT = "#pnnext";
 
 const COUNTER_SELECTOR = "g";
@@ -67,12 +67,13 @@ async function extraiInformacoesDaPagina(page) {
 
   let listLength = await extraiQuantidadeDeResultados(page);
   for (let i = 1; i < listLength + 5; i++) {
+    console.log(`Buscando item ${i}`);
     let imagem_selector = RESULTADO_IMAGEM_SELECTOR.replace("INDEX", i);
     let imagem = await page.evaluate((sel) => {
       let element = document.querySelector(sel);
       return element ? element.getAttribute("href") : element;
     }, imagem_selector);
-
+    console.log(`Imagem: ${imagem}`);
     if (imagem != null) {
       let imagemLink = querystring.parse(imagem.split("?")[1]);
       let imagemLinkToSave = imagemLink.imgurl;
@@ -113,6 +114,8 @@ async function extraiInformacoesDaPagina(page) {
         date: data,
         size: size,
       };
+      console.log("-");
+      console.log(resultPage);
 
       if (ehResultadoValido(resultPage)) {
         resultsPages.push(resultPage);
