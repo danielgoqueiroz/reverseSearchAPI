@@ -20,6 +20,7 @@ const SELECTOR_NAVIGATORS_NEXT = "#pnnext";
 const COUNTER_SELECTOR = "g";
 
 async function search(link) {
+  console.log("Iniciando");
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     headless: true,
@@ -40,6 +41,7 @@ async function search(link) {
     let resultados = await extraiInformacoesDaPagina(page);
 
     while (await existetemProximaPagina(page)) {
+      console.log("Proxima página");
       await page.click(SELECTOR_NAVIGATORS_NEXT);
       await page.waitForNavigation({
         timeout: 3600,
@@ -62,6 +64,7 @@ async function search(link) {
       mensagem: err,
     };
   } finally {
+    console.log("Terminando");
     browser.close();
   }
 }
