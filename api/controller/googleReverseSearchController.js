@@ -22,12 +22,23 @@ const COUNTER_SELECTOR = "g";
 async function search(link) {
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: false,
+    headless: true,
   });
 
   try {
-    const page = await buscaReversaEmLinkDeImagem(browser, link);
+    let page = await browser.newPage();
+    page.setExtraHTTPHeaders({
+      "Accept-Charset": "utf-8",
+      "accept-language": "pt-BR",
+    });
+
+    // await page.goto(link);
+    // await page.waitFor(1000);
+
+    page = await buscaReversaEmLinkDeImagem(browser, link);
+
     let resultados = await extraiInformacoesDaPagina(page);
+
     while (await existetemProximaPagina(page)) {
       await page.click(SELECTOR_NAVIGATORS_NEXT);
       await page.waitForNavigation({
@@ -63,86 +74,29 @@ async function existetemProximaPagina(page) {
 }
 
 async function extraiInformacoesDaPagina(page) {
+  const result = await page.evaluate(() => {
+    let gElements = document.getElementsByClassName("g");
 
+    let resultsPages = [];
 
-  
-  let resultsPages = [];
+    for (let index = 0; index < gElements.length; index++) {
+      let element = gElements[index];
+      if (element.getElementsByTagName("a")[0].href !== undefined) {
+        const link = element.getElementsByTagName("a")[0].href;
+        const text = element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
+          "aCOpRe"
+        )[0].textContent;
 
-  let gAreas = await page.evaluate((sel) => {
-    const gElements = document.getElementsByClassName(sel);
-    console.log(gElements);
-    // for (let index = 0; index < gElements.length; index++) {
-    //   const gElement = gElements[index];
-    //   const innectTextgElement.innerText,
-    //   gElement;
-    // }
-    return gElements;
-  }, "g");
+        resultsPages.push({
+          link: link,
+          text: text,
+        });
+      }
+    }
+    return resultsPages;
+  });
 
-  // for (let i = 1; i < gAreas.length; i++) {
-  //   console.log(`Buscando item ${i}`);
-
-  //   console.log(gArea[i].innerText());
-
-  //   let imagem_selector = RESULTADO_IMAGEM_SELECTOR.replace("INDEX", i);
-  //   let imagem = await page.evaluate((sel) => {
-  //     const gS = document.querySelector(sel);
-  //     return element;
-  //   }, imagem_selector);
-
-  //   if (imagem === null) {
-  //     return;
-  //   } else {
-  //     console.log(imagem);
-  //     let imagemLink = querystring.parse(imagem.split("?")[1]);
-  //     let imagemLinkToSave = imagemLink.imgurl;
-  //     let titulo_selector = RESULTADO_TITULO_SELECTOR.replace("INDEX", i);
-  //     let titulo = await page.evaluate((sel) => {
-  //       let element = document.querySelector(sel);
-  //       return element ? element.innerHTML : element;
-  //     }, titulo_selector);
-
-  //     let link_selector = RESULTADO_LINK_CONTEUDO.replace("INDEX", i);
-  //     let link = await page.evaluate((sel) => {
-  //       let element = document.querySelector(sel);
-  //       return element ? element.getAttribute("href") : element;
-  //     }, link_selector);
-
-  //     let data_selector = RESULTADO_DATA_CONTEUDO.replace("INDEX", i);
-  //     let dataRaw = await page.evaluate((sel) => {
-  //       let element = document.querySelector(sel);
-  //       return element ? element.innerHTML : element;
-  //     }, data_selector);
-
-  //     let size = "";
-  //     let data = "";
-  //     if (dataRaw != null) {
-  //       let dataRawSplited = dataRaw.split(" · ");
-  //       if (dataRawSplited[1]) {
-  //         data = dataRawSplited[1];
-  //         data = data.replace(" — ", "");
-  //       }
-  //       if (dataRawSplited[0]) {
-  //         size = dataRawSplited[0];
-  //       }
-  //     }
-  //     let resultPage = {
-  //       title: titulo,
-  //       image: imagemLinkToSave,
-  //       page: link,
-  //       date: data,
-  //       size: size,
-  //     };
-  //     console.log("-");
-  //     console.log(resultPage);
-
-  //     if (ehResultadoValido(resultPage)) {
-  //       resultsPages.push(resultPage);
-  //     }
-  // }
-  // }
-
-  return resultsPages;
+  return result;
 }
 
 function ehResultadoValido(resultado) {
@@ -181,8 +135,8 @@ async function buscaReversaEmLinkDeImagem(browser, link) {
   return page;
 }
 
-((async) => await extraiInformacoesDaPagina(
-  "https://okafala.files.wordpress.com/2014/08/virgin-virgo-new-moon-conjunct-sun.jpg"
-))
+// search(
+//   "https://www.google.com/search?tbs=sbi:AMhZZiseloeskfN2Yl1j4kOSmZ2FRNbH58uLlTsdkEd1-CfwCSvLbaTJzJ1EWQl8e2OQftahgZfqR4gLiV89xRC5whI8qcV4n6UIJyiU4fZnS3Q4YGey0qEu5ZJBUMkIh2rcJZV5DjXHJG1Ds1pHWeiKCbOr9IZaBbvq3bxG3EVK-gTruaTJsECdRST8DFHrPQguD1nScDLSU9CeIElpKy5K7ln3kOzOjD2eyj2I0n3fVcvV18OWrfWzKja3IplQkxGjCSPcNMl81bIzyON8OfQKgD4xPr_1P9nm8YdIxWwBnjmhrKJ4pIgXvSNMMoj8uuLWva1jGENKSmZcs0mZihX5Ce3SPc8omJTc4AWqpSiTQkg_1AfI2Z0gRGTgSk2jQFUtLzHD_1UD2ww"
+// );
 
-// module.exports.search = search;
+module.exports.search = search;

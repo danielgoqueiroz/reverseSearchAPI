@@ -9,7 +9,7 @@ const fs = require("fs");
 var crypto = require("crypto");
 const md5sum = crypto.createHash("md5");
 
-const reverseSearch = require("./api/controller/reverseSearchController");
+const reverseSearch = require("./api/controller/googleReverseSearchController");
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");

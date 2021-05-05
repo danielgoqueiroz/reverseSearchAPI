@@ -1,15 +1,14 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 
-const URL_SIMILAR_WEB_SITE = "https://www.similarweb.com/pt/";
+const URL_SIMILAR_WEB_SITE = "https://www.similarweb.com/pt/website/";
 
-const INPUT_SEARCH_SELECTOR = "#js-swSearch-input";
-const SEARCH_BUTTON_REQUEST_SELECTOR = "#js-swSearch-form > button";
+const RESULTADO_CLASS = "engagementInfo-valueNumber";
 
-const RESULTADO_TITULO_SELECTOR =
-  "#rso > div:nth-child(INDEX) > div > div.r > a > h3";
-
-async function run() {
+async function search() {
+  const url = new URL(
+    "https://www.agazeta.com.br/es/policia/com-quase-30-assaltos-medo-se-instala-em-agencias-dos-correios-no-es-0819"
+  );
   const browser = await await puppeteer.launch({
     headless: false,
   });
@@ -20,16 +19,26 @@ async function run() {
       "Accept-Charset": "utf-8",
       "accept-language": "pt-BR",
     });
-    await page.goto(URL_SIMILAR_WEB_SITE);
+    console.log(URL_SIMILAR_WEB_SITE + url.hostname);
+    await page.goto(URL_SIMILAR_WEB_SITE + url.hostname);
 
-    await page.waitFor(1000);
+    // await page.waitForSelector(INPUT_SEARCH_SELECTOR);
+    // await page.click(INPUT_SEARCH_SELECTOR);
+    // await page.keyboard.type(url.hostname);
+    // await page.keyboard.press("Enter");
 
-    await page.click(INPUT_SEARCH_SELECTOR);
-    await page.waitFor(1000);
-    await page.keyboard.type("ndmais.com.br");
-    await page.press("Accept");
+    await page.waitForXPath(
+      "/html/body/div[1]/main/div/div/div[2]/div[2]/div/div[3]/div/div/div/div[2]/div/span[2]/span[1]"
+    );
+    let html = await page.content();
+    fs.writeFile("page.html", html, function (err) {
+      if (err) throw err;
+      console.log("html salvo!");
+    });
 
-    await page.waitForNavigation();
+    console.log(html);
+    let resultado = await extraiResultado(page);
+    console.log(resultado[0]);
   } catch (err) {
     console.log(err);
   }
@@ -37,69 +46,11 @@ async function run() {
   console.log("Terminou");
 }
 
-async function existetemProximaPagina(page) {
-  return await page.evaluate((sel) => {
-    let element = document.querySelector(sel);
-    return element !== null && element !== undefined;
-  }, SELECTOR_NAVIGATORS_NEXT);
+async function extraiResultado(page) {
+  let resultado = await page.evaluate((sel) => {
+    return document.getElementsByClassName(sel);
+  }, RESULTADO_CLASS);
+  return resultado;
 }
 
-async function extraiInformacoesDaPagina(page) {
-  let resultsPages = [];
-  let listLength = await extraiQuantidadeDeResultados(page);
-  for (let i = 0; i < listLength + 5; i++) {
-    let titulo_selector = RESULTADO_TITULO_SELECTOR.replace("INDEX", i);
-    let titulo = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.innerHTML : element;
-    }, titulo_selector);
-
-    let imagem_selector = RESULTADO_IMAGEM_SELECTOR.replace("INDEX", i);
-    let imagem = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.getAttribute("href") : element;
-    }, imagem_selector);
-
-    let link_selector = RESULTADO_LINK_CONTEUDO.replace("INDEX", i);
-    let link = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.getAttribute("href") : element;
-    }, link_selector);
-
-    let data_selector = RESULTADO_DATA_CONTEUDO.replace("INDEX", i);
-    let data = await page.evaluate((sel) => {
-      let element = document.querySelector(sel);
-      return element ? element.innerHTML : element;
-    }, data_selector);
-
-    let resultPage = {
-      titulo: titulo,
-      imagem: imagem,
-      link: link,
-      data: data,
-    };
-    if (ehResultadoValido(resultPage)) {
-      resultsPages.push(resultPage);
-    }
-  }
-
-  return resultsPages;
-}
-
-function ehResultadoValido(resultado) {
-  return !(
-    resultado.titulo == null ||
-    resultado.imagem == null ||
-    resultado.link == null
-  );
-}
-
-async function extraiQuantidadeDeResultados(page) {
-  let listLength = await page.evaluate((sel) => {
-    return document.getElementsByClassName(sel).length;
-  }, COUNTER_SELECTOR);
-  console.log(listLength);
-  return listLength;
-}
-
-run();
+search();
