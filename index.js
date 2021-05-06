@@ -21,6 +21,7 @@ app.use(function (req, res, next) {
 });
 
 const cors = require("cors");
+
 app.use((req, res, next) => {
   //Qual site tem permissão de realizar a conexão, no exemplo abaixo está o "*" indicando que qualquer site pode fazer a conexão
   res.header("Access-Control-Allow-Origin", "*");
@@ -31,6 +32,16 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
+  res.status(200).send("Api funcionando");
+});
+
+app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
+  let author = req.query.author;
+  let site = req.query.site;
+  // crawler bing por resultados
+  // crawler google por resultados
+  // yandex site:ndmais.com.br "daniel queiroz"
+  // https://br.images.search.yahoo.com/
   res.status(200).send("Api funcionando");
 });
 
