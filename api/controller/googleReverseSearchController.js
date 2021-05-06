@@ -7,14 +7,6 @@ const BUTTON_SEARCH_SELECTOR = "#sbtc > div > div.dRYYxd > div.LM8x9c";
 const INPUT_SEARCH_SELECTOR = "#Ycyxxc";
 const SEARCH_BUTTON_REQUEST_SELECTOR = "#RZJ9Ub";
 
-const RESULTADO_TITULO_SELECTOR =
-  "#rso > div:nth-child(2) > div:nth-child(INDEX) > div > div > div.yuRUbf > a > h3";
-const RESULTADO_LINK_CONTEUDO =
-  "#rso > div:nth-child(2) > div:nth-child(INDEX) > div > div > div.yuRUbf > a";
-const RESULTADO_DATA_CONTEUDO =
-  "#rso > div:nth-child(2) > div:nth-child(INDEX) > div > div > div.IsZvec > div:nth-child(2) > span > span.f";
-const RESULTADO_IMAGEM_SELECTOR =
-  "#rso > div > div:nth-child(INDEX) > div > div > div.IsZvec > div:nth-child(1) > div";
 const SELECTOR_NAVIGATORS_NEXT = "#pnnext";
 
 const COUNTER_SELECTOR = "g";
@@ -23,7 +15,7 @@ async function search(link) {
   console.log("Iniciando");
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: true,
+    headless: false,
   });
 
   try {
@@ -48,12 +40,21 @@ async function search(link) {
         waitUntil: "domcontentloaded",
       });
       let resultsPage = await extraiInformacoesDaPagina(page);
+
+      
       resultados = resultados.concat(resultsPage);
+
     }
+
+    let resultGrouped = resultados.reduce( function (r,a) {
+      r[a.host] = r[a.host] || [];
+      r[a.host].push(a)
+      return r
+    }, Object.create(null))
 
     let resultPageComplete = {
       link: link,
-      results: resultados,
+      results: resultGrouped,
     };
 
     return resultPageComplete;
@@ -90,7 +91,10 @@ async function extraiInformacoesDaPagina(page) {
           "aCOpRe"
         )[0].textContent;
 
+        const host = new URL(link).host;
+
         resultsPages.push({
+          host: host,
           link: link,
           text: text,
         });
@@ -100,22 +104,6 @@ async function extraiInformacoesDaPagina(page) {
   });
 
   return result;
-}
-
-function ehResultadoValido(resultado) {
-  return !(
-    resultado.title == null ||
-    resultado.image == null ||
-    resultado.page == null
-  );
-}
-
-async function extraiQuantidadeDeResultados(page) {
-  let listLength = await page.evaluate((sel) => {
-    return document.getElementsByClassName(sel).length;
-  }, COUNTER_SELECTOR);
-  console.log(listLength);
-  return listLength;
 }
 
 async function buscaReversaEmLinkDeImagem(browser, link) {
@@ -137,9 +125,5 @@ async function buscaReversaEmLinkDeImagem(browser, link) {
   await page.waitForNavigation();
   return page;
 }
-
-// search(
-//   "https://www.google.com/search?tbs=sbi:AMhZZiseloeskfN2Yl1j4kOSmZ2FRNbH58uLlTsdkEd1-CfwCSvLbaTJzJ1EWQl8e2OQftahgZfqR4gLiV89xRC5whI8qcV4n6UIJyiU4fZnS3Q4YGey0qEu5ZJBUMkIh2rcJZV5DjXHJG1Ds1pHWeiKCbOr9IZaBbvq3bxG3EVK-gTruaTJsECdRST8DFHrPQguD1nScDLSU9CeIElpKy5K7ln3kOzOjD2eyj2I0n3fVcvV18OWrfWzKja3IplQkxGjCSPcNMl81bIzyON8OfQKgD4xPr_1P9nm8YdIxWwBnjmhrKJ4pIgXvSNMMoj8uuLWva1jGENKSmZcs0mZihX5Ce3SPc8omJTc4AWqpSiTQkg_1AfI2Z0gRGTgSk2jQFUtLzHD_1UD2ww"
-// );
 
 module.exports.search = search;
