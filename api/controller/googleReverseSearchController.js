@@ -15,7 +15,7 @@ async function search(link) {
   console.log("Iniciando");
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: false,
+    headless: true,
   });
 
   try {
@@ -41,16 +41,14 @@ async function search(link) {
       });
       let resultsPage = await extraiInformacoesDaPagina(page);
 
-      
       resultados = resultados.concat(resultsPage);
-
     }
 
-    let resultGrouped = resultados.reduce( function (r,a) {
+    let resultGrouped = resultados.reduce(function (r, a) {
       r[a.host] = r[a.host] || [];
-      r[a.host].push(a)
-      return r
-    }, Object.create(null))
+      r[a.host].push(a);
+      return r;
+    }, Object.create(null));
 
     let resultPageComplete = {
       link: link,
@@ -87,9 +85,10 @@ async function extraiInformacoesDaPagina(page) {
       let element = gElements[index];
       if (element.getElementsByTagName("a")[0].href !== undefined) {
         const link = element.getElementsByTagName("a")[0].href;
-        const text = element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
-          "aCOpRe"
-        )[0].textContent;
+        const text =
+          element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
+            "aCOpRe"
+          )[0].textContent;
 
         const host = new URL(link).host;
 
