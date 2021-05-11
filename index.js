@@ -47,7 +47,7 @@ app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
 
 app.get("/reverseSearch", async (req, res) => {
   let link = req.query.url;
-  console.log(link)
+  console.log(link);
   let localData = cache.get(link);
 
   if (localData == null) {

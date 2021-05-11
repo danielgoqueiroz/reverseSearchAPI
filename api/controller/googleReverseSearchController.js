@@ -44,18 +44,18 @@ async function search(link) {
       resultados = resultados.concat(resultsPage);
     }
 
-    let resultGrouped = resultados.reduce(function (r, a) {
-      r[a.host] = r[a.host] || [];
-      r[a.host].push(a);
-      return r;
-    }, Object.create(null));
+    // let resultGrouped = resultados.reduce(function (r, a) {
+    //   r[a.host] = r[a.host] || [];
+    //   r[a.host].push(a);
+    //   return r;
+    // }, Object.create(null));
 
-    let resultPageComplete = {
-      link: link,
-      results: resultGrouped,
-    };
+    // let resultPageComplete = {
+    //   link: link,
+    //   results: resultGrouped,
+    // };
 
-    return resultPageComplete;
+    return resultados;
   } catch (err) {
     console.log(err);
     return {
@@ -79,24 +79,30 @@ async function extraiInformacoesDaPagina(page) {
   const result = await page.evaluate(() => {
     let gElements = document.getElementsByClassName("g");
 
-    let resultsPages = [];
+    if (gElements === undefined) {
+      return;
+    }
 
+    let resultsPages = [];
     for (let index = 0; index < gElements.length; index++) {
+      console.log(index);
       let element = gElements[index];
       if (element.getElementsByTagName("a")[0].href !== undefined) {
         const link = element.getElementsByTagName("a")[0].href;
-        const text =
-          element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
-            "aCOpRe"
-          )[0].textContent;
+        if (link.length > 0) {
+          const text =
+            element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
+              "aCOpRe"
+            )[0].textContent;
+          console.log(link);
+          const host = new URL(link).host;
 
-        const host = new URL(link).host;
-
-        resultsPages.push({
-          host: host,
-          link: link,
-          text: text,
-        });
+          resultsPages.push({
+            host: host,
+            link: link,
+            text: text,
+          });
+        }
       }
     }
     return resultsPages;
