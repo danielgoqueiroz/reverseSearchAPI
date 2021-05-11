@@ -43,19 +43,11 @@ async function search(link) {
 
       resultados = resultados.concat(resultsPage);
     }
-
-    // let resultGrouped = resultados.reduce(function (r, a) {
-    //   r[a.host] = r[a.host] || [];
-    //   r[a.host].push(a);
-    //   return r;
-    // }, Object.create(null));
-
-    // let resultPageComplete = {
-    //   link: link,
-    //   results: resultGrouped,
-    // };
-
-    return resultados;
+    const resultApi = {
+      link: link,
+      results: resultados,
+    };
+    return resultApi;
   } catch (err) {
     console.log(err);
     return {
