@@ -49,7 +49,7 @@ app.get("/reverseSearch/results", (req, res) => {
   let hash = req.query.hash;
   if (hash != undefined && hash.length > 5) {
     const jsonPath = `api/resources/json/${hash}.json`;
-    let json = JSON.stringify(fs.readFileSync(jsonPath));
+    let json = JSON.parse(fs.readFileSync(jsonPath));
     return res.send(json).status(200);
   }
   let jsons = [];
@@ -87,6 +87,7 @@ app.get("/reverseSearch/search", async (req, res) => {
     });
   } else {
     console.log("Resultado carregado do cache.");
+    response.hash = linkHash;
     res.status(200).send(JSON.parse(localData));
   }
 });
