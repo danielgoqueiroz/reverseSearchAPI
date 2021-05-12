@@ -45,29 +45,48 @@ app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
   res.status(200).send("Api funcionando");
 });
 
-app.get("/reverseSearch", async (req, res) => {
-  let link = req.query.url;
-  console.log(link);
-  let localData = cache.get(link);
+app.get("/reverseSearch/results", (req, res) => {
+  let hash = req.query.hash;
+  if (hash != undefined && hash.length > 5) {
+    const jsonPath = `api/resources/json/${hash}.json`;
+    let json = JSON.stringify(fs.readFileSync(jsonPath));
+    return res.send(json).status(200);
+  }
+  let jsons = [];
+
+  fs.readdirSync("api/resources/json").forEach((file) => {
+    let json = JSON.parse(fs.readFileSync(`api/resources/json/${file}`));
+    jsons.push(json);
+  });
+
+  return res.send(jsons).status(200);
+});
+
+app.get("/reverseSearch/search", async (req, res) => {
+  let link = null;
+  try {
+    link = new URL(req.query.url);
+  } catch (_) {
+    res.status(403).send({ error: "Url inválida" });
+  }
+
+  var linkHash = crypto.createHash("md5").update(link.toString()).digest("hex");
+  let localData = cache.get(linkHash);
 
   if (localData == null) {
-    console.log("Realizando crawler");
-    await reverseSearch.search(link).then((response) => {
-      cache.put(link, JSON.stringify(response));
-      var hash = crypto.createHash("md5").update(link).digest("hex");
-      fs.writeFile(
-        `api/resources/json/${hash}.json`,
-        JSON.stringify(response),
-        function (err) {
-          if (err) throw err;
-          console.log("json salvo!");
-        }
-      );
-      console.log(response);
+    console.log(`Realizando crawler de : ${link}`);
+    await reverseSearch.search(link.toString()).then((response) => {
+      cache.put(linkHash, JSON.stringify(response));
+      const jsonName = `api/resources/json/${linkHash}.json`;
+      fs.writeFile(jsonName, JSON.stringify(response), function (err) {
+        if (err) throw err;
+        console.log(`Json salvo: ${jsonName}`);
+      });
+      response.hash = linkHash;
       res.status(200).send(response);
     });
   } else {
-    console.log("Resultado do cache");
+    console.log("Resultado carregado do cache.");
     res.status(200).send(JSON.parse(localData));
   }
 });

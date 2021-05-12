@@ -15,6 +15,11 @@
     "api",
     "heroku"
   ],
+  "nodemonConfig": {
+    "ignore": [
+      "api/resources/json/*"
+    ]
+  },
   "author": "daniel gomes queiroz",
   "license": "ISC",
   "dependencies": {
