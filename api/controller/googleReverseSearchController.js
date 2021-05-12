@@ -25,9 +25,6 @@ async function search(link) {
       "accept-language": "pt-BR",
     });
 
-    // await page.goto(link);
-    // await page.waitFor(1000);
-
     page = await buscaReversaEmLinkDeImagem(browser, link);
 
     let resultados = await extraiInformacoesDaPagina(page);
@@ -76,23 +73,30 @@ async function extraiInformacoesDaPagina(page) {
     }
 
     let resultsPages = [];
+
     for (let index = 0; index < gElements.length; index++) {
-      console.log(index);
       let element = gElements[index];
-      if (element.getElementsByTagName("a")[0].href !== undefined) {
-        const link = element.getElementsByTagName("a")[0].href;
+
+      const imgEl = element.getElementsByTagName("img")[0];
+      const link = element.getElementsByTagName("a")[0].href;
+      if (link !== undefined && imgEl !== undefined) {
+        // const link = element.getElementsByTagName("a")[0].href;
+
         if (link.length > 0) {
+          const preview = imgEl !== undefined ? imgEl.src : "";
+
           const text =
             element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
               "aCOpRe"
             )[0].textContent;
-          console.log(link);
+
           const host = new URL(link).host;
 
           resultsPages.push({
             host: host,
             link: link,
             text: text,
+            preview: preview,
           });
         }
       }
