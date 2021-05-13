@@ -54,9 +54,13 @@ app.get("/reverseSearch/results", (req, res) => {
   }
   let jsons = [];
 
-  fs.readdirSync("api/resources/json").forEach((file) => {
-    let json = JSON.parse(fs.readFileSync(`api/resources/json/${file}`));
-    jsons.push(json);
+  fs.readdirSync("api/resources/json/").forEach((file) => {
+    try {
+      let json = JSON.parse(fs.readFileSync(`api/resources/json/${file}`));
+      jsons.push(json);
+    } catch (err) {
+      console.log("Registro inconsistente")
+    }
   });
 
   return res.send(jsons).status(200);
