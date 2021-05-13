@@ -59,7 +59,7 @@ app.get("/reverseSearch/results", (req, res) => {
       let json = JSON.parse(fs.readFileSync(`api/resources/json/${file}`));
       jsons.push(json);
     } catch (err) {
-      console.log("Registro inconsistente")
+      console.log("Registro inconsistente");
     }
   });
 
@@ -75,6 +75,14 @@ app.get("/reverseSearch/search", async (req, res) => {
   }
 
   var linkHash = crypto.createHash("md5").update(link.toString()).digest("hex");
+  const localFile = `api/resources/json/${linkHash}.json`;
+
+  if (fs.existsSync(localFile)) {
+    console.log("Dado carregado do histórico");
+    let jsonLocal = JSON.parse(fs.readFileSync(localFile));
+    return res.status(200).send(jsonLocal);
+  }
+
   let localData = cache.get(linkHash);
 
   if (localData == null) {
