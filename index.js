@@ -21,6 +21,7 @@ app.use(function (req, res, next) {
 });
 
 const cors = require("cors");
+const { json } = require("express");
 
 app.use((req, res, next) => {
   //Qual site tem permissão de realizar a conexão, no exemplo abaixo está o "*" indicando que qualquer site pode fazer a conexão
@@ -45,12 +46,28 @@ app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
   res.status(200).send("Api funcionando");
 });
 
+app.get("/reverseSearch/csv", (req, res) => {
+  let hash = req.query.hash;
+  if (hash != undefined && hash.length > 5) {
+    const jsonPath = `api/resources/json/${hash}.json`;
+
+    console.log("Link: " + link);
+    return res.status(201).send({ csv: link });
+  } else {
+    return res.send(hash).status(200);
+  }
+});
+
 app.get("/reverseSearch/results", (req, res) => {
   let hash = req.query.hash;
   if (hash != undefined && hash.length > 5) {
     const jsonPath = `api/resources/json/${hash}.json`;
-    let json = JSON.parse(fs.readFileSync(jsonPath));
-    return res.send(json).status(200);
+    if (fs.existsSync(jsonPath)) {
+      let json = JSON.parse(fs.readFileSync(jsonPath));
+      return res.send(json).status(200);
+    } else {
+      return res.send({ error: "Dado não encontrado" }).status(401);
+    }
   }
   let jsons = [];
 
@@ -75,11 +92,12 @@ app.get("/reverseSearch/search", async (req, res) => {
   }
 
   var linkHash = crypto.createHash("md5").update(link.toString()).digest("hex");
-  const localFile = `api/resources/json/${linkHash}.json`;
+  const jsonPath = `api/resources/json/${linkHash}.json`;
+  const csvPath = `api/resources/csv/${linkHash}.csv`;
 
-  if (fs.existsSync(localFile)) {
+  if (fs.existsSync(jsonPath)) {
     console.log("Dado carregado do histórico");
-    let jsonLocal = JSON.parse(fs.readFileSync(localFile));
+    const jsonLocal = JSON.parse(fs.readFileSync(jsonPath));
     return res.status(200).send(jsonLocal);
   }
 
@@ -88,12 +106,24 @@ app.get("/reverseSearch/search", async (req, res) => {
   if (localData == null) {
     console.log(`Realizando crawler de : ${link}`);
     await reverseSearch.search(link.toString()).then((response) => {
+      const jsonLocal = response.results;
       cache.put(linkHash, JSON.stringify(response));
-      const jsonName = `api/resources/json/${linkHash}.json`;
-      fs.writeFile(jsonName, JSON.stringify(response), function (err) {
+      //Write json
+      fs.writeFile(jsonPath, JSON.stringify(response), function (err) {
         if (err) throw err;
-        console.log(`Json salvo: ${jsonName}`);
+        console.log(`Json salvo: ${jsonPath}`);
       });
+      //Write Csv
+      let csvContent = "";
+      jsonLocal.forEach((item) => {
+        let line = `${item.host};${item.link};${item.text}\n`;
+        csvContent += line;
+      });
+      fs.writeFile(csvPath, csvContent, "utf-8", function (err) {
+        if (err) throw err;
+        console.log(`Json salvo: ${csvPath}`);
+      });
+
       response.hash = linkHash;
       res.status(200).send(response);
     });
