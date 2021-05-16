@@ -15,7 +15,7 @@ async function search(link) {
   console.log("Iniciando");
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: true,
+    headless: false,
   });
 
   try {

@@ -46,15 +46,18 @@ app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
   res.status(200).send("Api funcionando");
 });
 
-app.get("/reverseSearch/csv", (req, res) => {
+app.delete("/reverseSearch/result", (req, res) => {
   let hash = req.query.hash;
   if (hash != undefined && hash.length > 5) {
     const jsonPath = `api/resources/json/${hash}.json`;
-
-    console.log("Link: " + link);
-    return res.status(201).send({ csv: link });
+    fs.unlink(jsonPath, (err) => {
+      if (err) {
+        return res.send({message: 'Erro ao remover json', hash: hash}).status(403);    
+      }
+    })
+    return res.status(201).send({ message: 'Iten removido', hash: hash });
   } else {
-    return res.send(hash).status(200);
+    return res.send({message: 'Hash inválido'}).status(403);
   }
 });
 
@@ -68,7 +71,7 @@ app.get("/reverseSearch/results", (req, res) => {
     } else {
       return res.send({ error: "Dado não encontrado" }).status(401);
     }
-  }
+  } 
   let jsons = [];
 
   fs.readdirSync("api/resources/json/").forEach((file) => {
@@ -93,7 +96,7 @@ app.get("/reverseSearch/search", async (req, res) => {
 
   var linkHash = crypto.createHash("md5").update(link.toString()).digest("hex");
   const jsonPath = `api/resources/json/${linkHash}.json`;
-  const csvPath = `api/resources/csv/${linkHash}.csv`;
+  // const csvPath = `api/resources/csv/${linkHash}.csv`;
 
   if (fs.existsSync(jsonPath)) {
     console.log("Dado carregado do histórico");
@@ -106,25 +109,14 @@ app.get("/reverseSearch/search", async (req, res) => {
   if (localData == null) {
     console.log(`Realizando crawler de : ${link}`);
     await reverseSearch.search(link.toString()).then((response) => {
-      const jsonLocal = response.results;
+      response.hash = linkHash;
       cache.put(linkHash, JSON.stringify(response));
       //Write json
       fs.writeFile(jsonPath, JSON.stringify(response), function (err) {
         if (err) throw err;
         console.log(`Json salvo: ${jsonPath}`);
       });
-      //Write Csv
-      let csvContent = "";
-      jsonLocal.forEach((item) => {
-        let line = `${item.host};${item.link};${item.text}\n`;
-        csvContent += line;
-      });
-      fs.writeFile(csvPath, csvContent, "utf-8", function (err) {
-        if (err) throw err;
-        console.log(`Json salvo: ${csvPath}`);
-      });
 
-      response.hash = linkHash;
       res.status(200).send(response);
     });
   } else {
