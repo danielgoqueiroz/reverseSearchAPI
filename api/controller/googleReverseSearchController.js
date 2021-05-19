@@ -80,8 +80,6 @@ async function extraiInformacoesDaPagina(page) {
       const imgEl = element.getElementsByTagName("img")[0];
       const link = element.getElementsByTagName("a")[0].href;
       if (link !== undefined && imgEl !== undefined) {
-        // const link = element.getElementsByTagName("a")[0].href;
-
         if (link.length > 0) {
           const preview = imgEl !== undefined ? imgEl.src : "";
 

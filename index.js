@@ -9,6 +9,8 @@ const fs = require("fs");
 var crypto = require("crypto");
 const md5sum = crypto.createHash("md5");
 
+const cors = require("cors");
+const { json } = require("express");
 const reverseSearch = require("./api/controller/googleReverseSearchController");
 
 app.use(function (req, res, next) {
@@ -19,9 +21,6 @@ app.use(function (req, res, next) {
   );
   next();
 });
-
-const cors = require("cors");
-const { json } = require("express");
 
 app.use((req, res, next) => {
   //Qual site tem permissão de realizar a conexão, no exemplo abaixo está o "*" indicando que qualquer site pode fazer a conexão
@@ -36,31 +35,25 @@ app.get("/", (req, res) => {
   res.status(200).send("Api funcionando");
 });
 
-app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
-  let author = req.query.author;
-  let site = req.query.site;
-  // crawler bing por resultados
-  // crawler google por resultados
-  // yandex site:ndmais.com.br "daniel queiroz"
-  // https://br.images.search.yahoo.com/
-  res.status(200).send("Api funcionando");
-});
-
+//Search reult saved
 app.delete("/reverseSearch/result", (req, res) => {
   let hash = req.query.hash;
   if (hash != undefined && hash.length > 5) {
     const jsonPath = `api/resources/json/${hash}.json`;
     fs.unlink(jsonPath, (err) => {
       if (err) {
-        return res.send({message: 'Erro ao remover json', hash: hash}).status(403);    
+        return res
+          .send({ message: "Erro ao remover json", hash: hash })
+          .status(403);
       }
-    })
-    return res.status(201).send({ message: 'Iten removido', hash: hash });
+    });
+    return res.status(201).send({ message: "Iten removido", hash: hash });
   } else {
-    return res.send({message: 'Hash inválido'}).status(403);
+    return res.send({ message: "Hash inválido" }).status(403);
   }
 });
 
+//List os searchs
 app.get("/reverseSearch/results", (req, res) => {
   let hash = req.query.hash;
   if (hash != undefined && hash.length > 5) {
@@ -71,7 +64,7 @@ app.get("/reverseSearch/results", (req, res) => {
     } else {
       return res.send({ error: "Dado não encontrado" }).status(401);
     }
-  } 
+  }
   let jsons = [];
 
   fs.readdirSync("api/resources/json/").forEach((file) => {
@@ -88,7 +81,18 @@ app.get("/reverseSearch/results", (req, res) => {
 
 app.get("/reverseSearch/search", async (req, res) => {
   let link = null;
+
   try {
+    // const email = req.query.email;
+    // if (
+    //   email === undefined ||
+    //   email === null ||
+    //   !/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(
+    //     email
+    //   )
+    // ) {
+    //   return res.status(403).send({ message: `E-mail inválido:${email} ` });
+    // }
     link = new URL(req.query.url);
   } catch (_) {
     res.status(403).send({ error: "Url inválida" });
@@ -96,7 +100,6 @@ app.get("/reverseSearch/search", async (req, res) => {
 
   var linkHash = crypto.createHash("md5").update(link.toString()).digest("hex");
   const jsonPath = `api/resources/json/${linkHash}.json`;
-  // const csvPath = `api/resources/csv/${linkHash}.csv`;
 
   if (fs.existsSync(jsonPath)) {
     console.log("Dado carregado do histórico");
@@ -116,14 +119,24 @@ app.get("/reverseSearch/search", async (req, res) => {
         if (err) throw err;
         console.log(`Json salvo: ${jsonPath}`);
       });
-
-      res.status(200).send(response);
+      nodemailer.res.status(200).send(response);
     });
   } else {
     console.log("Resultado carregado do cache.");
     response.hash = linkHash;
     res.status(200).send(JSON.parse(localData));
   }
+});
+
+//Find imagens from author
+app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
+  let author = req.query.author;
+  let site = req.query.site;
+  // crawler bing por resultados
+  // crawler google por resultados
+  // yandex site:ndmais.com.br "daniel queiroz"
+  // https://br.images.search.yahoo.com/
+  res.status(200).send("Api funcionando");
 });
 
 // Run server
