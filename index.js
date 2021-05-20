@@ -11,7 +11,7 @@ const cors = require("cors");
 const { json } = require("express");
 const reverseSearch = require("./api/controller/googleReverseSearchController");
 const mail = require("./api/controller/emailController");
-
+const csv = require("./api/controller/csvController");
 const CONST = require("./api/helper/Consts");
 
 app.use(function (req, res, next) {
@@ -122,7 +122,10 @@ app.get("/reverseSearch/search", async (req, res) => {
         email,
         `Resultado de pesquisa (${linkHash})`,
         "Resultado de pesquisa em anexo. ",
-        { filename: `${linkHash}.csv`, content: JSON.stringify(response) }
+        {
+          filename: `${linkHash}.csv`,
+          content: JSON.stringify(csv.jsontoCsv(response.results)),
+        }
       );
 
       return res.status(200).send(response);
