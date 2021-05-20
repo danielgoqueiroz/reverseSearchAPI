@@ -3,15 +3,16 @@ const app = express();
 const http = require("http");
 const server = http.createServer(app);
 const port = 3000;
-Cache = require("cache");
-const cache = new Cache(100 * 1000); // Create a cache with 10 second TTL
 const fs = require("fs");
 var crypto = require("crypto");
 const md5sum = crypto.createHash("md5");
-
+const utils = require("./api/helper/utils");
 const cors = require("cors");
 const { json } = require("express");
 const reverseSearch = require("./api/controller/googleReverseSearchController");
+const mail = require("./api/controller/emailController");
+
+const CONST = require("./api/helper/Consts");
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -35,16 +36,22 @@ app.get("/", (req, res) => {
   res.status(200).send("Api funcionando");
 });
 
-//Search reult saved
+//Remove
 app.delete("/reverseSearch/result", (req, res) => {
-  let hash = req.query.hash;
+  const hash = req.query.hash;
+  const email = req.query.email;
+
+  if (!utils.isEmailValid(email)) {
+    return res.status(403).send({ message: "Email inválido." });
+  }
+
+  const basePath = `${CONST.JSON_PATH}/${emailHash}`;
+
   if (hash != undefined && hash.length > 5) {
-    const jsonPath = `api/resources/json/${hash}.json`;
+    const jsonPath = `${basePath}/${hash}.json`;
     fs.unlink(jsonPath, (err) => {
       if (err) {
-        return res
-          .send({ message: "Erro ao remover json", hash: hash })
-          .status(403);
+        return res.send({ message: "Erro ao remover o item." }).status(403);
       }
     });
     return res.status(201).send({ message: "Iten removido", hash: hash });
@@ -53,23 +60,22 @@ app.delete("/reverseSearch/result", (req, res) => {
   }
 });
 
-//List os searchs
+//List os searchs from a e-mail
 app.get("/reverseSearch/results", (req, res) => {
-  let hash = req.query.hash;
-  if (hash != undefined && hash.length > 5) {
-    const jsonPath = `api/resources/json/${hash}.json`;
-    if (fs.existsSync(jsonPath)) {
-      let json = JSON.parse(fs.readFileSync(jsonPath));
-      return res.send(json).status(200);
-    } else {
-      return res.send({ error: "Dado não encontrado" }).status(401);
-    }
+  const email = req.query.email;
+  const emailHash = utils.getHash(email);
+
+  if (!utils.isEmailValid) {
+    return res.status(403).send({ message: "Email informado inválido." });
   }
+
+  const basePath = `${CONST.JSON_PATH}/${emailHash}`;
+
   let jsons = [];
 
-  fs.readdirSync("api/resources/json/").forEach((file) => {
+  fs.readdirSync(basePath).forEach((file) => {
     try {
-      let json = JSON.parse(fs.readFileSync(`api/resources/json/${file}`));
+      const json = JSON.parse(fs.readFileSync(`${basePath}/${file}`));
       jsons.push(json);
     } catch (err) {
       console.log("Registro inconsistente");
@@ -80,51 +86,49 @@ app.get("/reverseSearch/results", (req, res) => {
 });
 
 app.get("/reverseSearch/search", async (req, res) => {
-  let link = null;
+  const link = req.query.url;
+  const email = req.query.email;
 
-  try {
-    // const email = req.query.email;
-    // if (
-    //   email === undefined ||
-    //   email === null ||
-    //   !/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(
-    //     email
-    //   )
-    // ) {
-    //   return res.status(403).send({ message: `E-mail inválido:${email} ` });
-    // }
-    link = new URL(req.query.url);
-  } catch (_) {
-    res.status(403).send({ error: "Url inválida" });
+  if (!utils.isLinkValid(link)) {
+    return res.status(403).send({ message: "Link inválido" });
+  }
+  if (!utils.isEmailValid(email)) {
+    return res.status(403).send({ message: "E-mail inválido" });
   }
 
-  var linkHash = crypto.createHash("md5").update(link.toString()).digest("hex");
-  const jsonPath = `api/resources/json/${linkHash}.json`;
+  const linkHash = utils.getHash(link);
+  const emailHash = utils.getHash(email);
 
-  if (fs.existsSync(jsonPath)) {
-    console.log("Dado carregado do histórico");
-    const jsonLocal = JSON.parse(fs.readFileSync(jsonPath));
-    return res.status(200).send(jsonLocal);
+  const basePath = `${CONST.JSON_PATH}/${emailHash}`;
+  if (!fs.existsSync(basePath)) {
+    fs.mkdirSync(basePath);
   }
 
-  let localData = cache.get(linkHash);
+  const jsonPath = `${basePath}/${linkHash}.json`;
+  const jsonContent = utils.readFile(jsonPath);
 
-  if (localData == null) {
+  if (!fs.existsSync(jsonPath)) {
     console.log(`Realizando crawler de : ${link}`);
     await reverseSearch.search(link.toString()).then((response) => {
-      response.hash = linkHash;
-      cache.put(linkHash, JSON.stringify(response));
       //Write json
-      fs.writeFile(jsonPath, JSON.stringify(response), function (err) {
-        if (err) throw err;
-        console.log(`Json salvo: ${jsonPath}`);
+      fs.writeFileSync(jsonPath, JSON.stringify(response), function (err) {
+        if (err) {
+          res
+            .status(403)
+            .send({ message: "Erro ao salvar resultado: ", erro: err });
+        }
       });
-      nodemailer.res.status(200).send(response);
+      mail.sendMail(
+        email,
+        `Resultado de pesquisa (${linkHash})`,
+        "Resultado de pesquisa em anexo. ",
+        { filename: `${linkHash}.csv`, content: JSON.stringify(response) }
+      );
+
+      return res.status(200).send(response);
     });
   } else {
-    console.log("Resultado carregado do cache.");
-    response.hash = linkHash;
-    res.status(200).send(JSON.parse(localData));
+    res.status(200).send(jsonContent);
   }
 });
 
@@ -141,5 +145,5 @@ app.get("/findImagesLinksFromSiteFromAuthor", (req, res) => {
 
 // Run server
 server.listen(process.env.PORT || port, () => {
-  console.log(`Iniciando API de Crawler na porta[${port}]`);
+  console.log(`Crawler iniciado na porta[${port}]`);
 });

@@ -11,22 +11,26 @@ var transporter = nodemailer.createTransport({
   },
 });
 
-var mailOptions = {
-  from: "site@madqueenrock.com",
-  to: ["pubdaniel@gmail.com", "contato@danielqueiroz.com"],
-  envelope: {
-    from: "site <site@madqueenrock.com>", // used as MAIL FROM: address for SMTP
-    to: "Daniel <pubdaniel@gmail.com>", // used as RCPT TO: address for SMTP
-  },
-  subject: "Assunto de email",
-  text: "2Aqui vai um texto pára testar o texto",
-};
+function sendMail(to, subject, message, attachment) {
+  var mailOptions = {
+    from: "site@madqueenrock.com",
+    to: to,
+    envelope: {
+      from: "site <site@madqueenrock.com>",
+      to: to,
+    },
+    subject: subject,
+    text: message,
+    attachments: [attachment],
+  };
 
-transporter.sendMail(mailOptions, function (error, info) {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Email sent: " + info.response);
-    console.log(info);
-  }
-});
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(`E-mail enviado para ${mailOptions.to}`);
+    }
+  });
+}
+
+module.exports.sendMail = sendMail;

@@ -1,9 +1,11 @@
 const puppeteer = require("puppeteer");
 const querystring = require("querystring");
+const util = require("../helper/utils");
 
 const URL_GOOGLE_IMAGE_SEARCH = "https://www.google.com/imghp?hl=pt-BR";
 
 const BUTTON_SEARCH_SELECTOR = "#sbtc > div > div.dRYYxd > div.LM8x9c";
+
 const INPUT_SEARCH_SELECTOR = "#Ycyxxc";
 const SEARCH_BUTTON_REQUEST_SELECTOR = "#RZJ9Ub";
 
@@ -15,7 +17,7 @@ async function search(link) {
   console.log("Iniciando");
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: false,
+    headless: true,
   });
 
   try {
@@ -42,6 +44,7 @@ async function search(link) {
     }
     const resultApi = {
       link: link,
+      hash: util.getHash(link),
       results: resultados,
     };
     return resultApi;
@@ -113,7 +116,7 @@ async function buscaReversaEmLinkDeImagem(browser, link) {
   });
   await page.goto(URL_GOOGLE_IMAGE_SEARCH);
 
-  await page.waitFor(1000);
+  await page.waitFor(BUTTON_SEARCH_SELECTOR);
 
   await page.click(BUTTON_SEARCH_SELECTOR);
   await page.waitForSelector(INPUT_SEARCH_SELECTOR);
