@@ -49,12 +49,16 @@ app.delete("/reverseSearch/result", (req, res) => {
 
   if (hash != undefined && hash.length > 5) {
     const jsonPath = `${basePath}/${hash}.json`;
+    if (!fs.existsSync(jsonPath)) {
+      return res.status(403).send({ message: "Arquivo não encontrado" });
+    }
     fs.unlink(jsonPath, (err) => {
       if (err) {
         return res.send({ message: "Erro ao remover o item." }).status(403);
+      } else {
+        return res.status(201).send({ message: "Iten removido", hash: hash });
       }
     });
-    return res.status(201).send({ message: "Iten removido", hash: hash });
   } else {
     return res.send({ message: "Hash inválido" }).status(403);
   }
@@ -85,6 +89,7 @@ app.get("/reverseSearch/results", (req, res) => {
   return res.send(jsons).status(200);
 });
 
+//Get specific result
 app.get("/reverseSearch/search", async (req, res) => {
   const link = req.query.url;
   const email = req.query.email;
