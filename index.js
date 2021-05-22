@@ -36,6 +36,40 @@ app.get("/", (req, res) => {
   res.status(200).send("Api funcionando");
 });
 
+//Send result to email
+app.get("/reverseSearch/result/send", (req, res) => {
+  const email = req.query.email;
+
+  if (!utils.isEmailValid(email)) {
+    return res.status(403).send({ message: "E-mail inválido" });
+  }
+
+  const hash = req.query.hash;
+  const emailHash = utils.getHash(email);
+
+  const basePath = `${CONST.JSON_PATH}/${emailHash}`;
+  if (!fs.existsSync(basePath)) {
+    return res.status(403).send({ message: "Sem resultados para o e-mail" });
+  }
+
+  const jsonPath = `${basePath}/${hash}.json`;
+  if (!fs.existsSync(jsonPath)) {
+    return res.status(403).send({ message: "Arquivo não encontrado" });
+  }
+  const jsonContent = utils.readFile(jsonPath);
+
+  mail.sendMail(
+    email,
+    `Resultado de pesquisa (${hash})`,
+    "Resultado de pesquisa em anexo. ",
+    {
+      filename: `${hash}.csv`,
+      content: csv.jsontoCsv(jsonContent.results),
+    }
+  );
+  res.status(200).send(jsonContent);
+});
+
 //Remove
 app.delete("/reverseSearch/result", (req, res) => {
   const hash = req.query.hash;
