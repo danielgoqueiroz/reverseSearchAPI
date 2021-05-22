@@ -136,6 +136,15 @@ app.get("/reverseSearch/search", async (req, res) => {
       return res.status(200).send(response);
     });
   } else {
+    mail.sendMail(
+      email,
+      `Resultado de pesquisa (${linkHash})`,
+      "Resultado de pesquisa em anexo. ",
+      {
+        filename: `${linkHash}.csv`,
+        content: csv.jsontoCsv(jsonContent.results),
+      }
+    );
     res.status(200).send(jsonContent);
   }
 });

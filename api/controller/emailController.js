@@ -1,22 +1,22 @@
 var nodemailer = require("nodemailer");
 
 var transporter = nodemailer.createTransport({
-  name: "madqueenrock.com",
-  host: "mail.madqueenrock.com",
+  name: "email@reversesearch.danielqueiroz.com",
+  host: "reversesearch.danielqueiroz.com",
   port: 465,
   secure: true,
   auth: {
-    user: "site@madqueenrock.com",
-    pass: "M@dqueen",
+    user: "email@reversesearch.danielqueiroz.com",
+    pass: "CK3gN8iTtyPdSRJ",
   },
 });
 
 function sendMail(to, subject, message, attachment) {
   var mailOptions = {
-    from: "site@madqueenrock.com",
+    from: "email@reversesearch.danielqueiroz.com",
     to: to,
     envelope: {
-      from: "site <site@madqueenrock.com>",
+      from: "site <email@reversesearch.danielqueiroz.com>",
       to: to,
     },
     subject: subject,
