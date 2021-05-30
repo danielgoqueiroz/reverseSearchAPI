@@ -102,6 +102,7 @@ app.delete("/reverseSearch/result", (req, res) => {
 //List os searchs from a e-mail
 app.get("/reverseSearch/results", (req, res) => {
   const email = req.query.email;
+  const emailHash = utils.getHash(email);
 
   if (!utils.isEmailValid) {
     return res.status(403).send({ message: "Email informado inválido." });
