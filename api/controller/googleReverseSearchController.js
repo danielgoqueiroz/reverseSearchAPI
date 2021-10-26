@@ -10,8 +10,9 @@ const SEARCH_BUTTON_REQUEST_SELECTOR = "#RZJ9Ub";
 const SELECTOR_NAVIGATORS_NEXT = "#pnnext";
 const COUNTER_SELECTOR = "g";
 
-async function search(link) {
+async function search(link, limitPages) {
   console.log("Iniciando");
+  let counter = 1;
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     headless: false,
@@ -28,7 +29,8 @@ async function search(link) {
 
     let resultados = await extraiInformacoesDaPagina(page);
 
-    while (await existetemProximaPagina(page)) {
+    while ((await existetemProximaPagina(page)) && counter < limitPages) {
+      counter++;
       console.log("Proxima página");
       await page.click(SELECTOR_NAVIGATORS_NEXT);
       await page.waitForNavigation({

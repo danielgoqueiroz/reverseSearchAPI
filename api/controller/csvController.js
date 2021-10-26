@@ -1,6 +1,6 @@
 module.exports = {
   jsontoCsv(json) {
-    let csvContent = "Site,Link, \r\n";
+    let csvContent = "data:text/csv;charset=utf-8,Site,Link, \r\n";
     json.forEach((item) => {
       const line = `${item.host},${item.link}\r\n`;
       csvContent += line;

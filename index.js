@@ -128,7 +128,9 @@ app.get("/reverseSearch/results", (req, res) => {
 //Get specific result
 app.get("/reverseSearch/search", async (req, res) => {
   const link = req.query.url;
+  const limitPages = req.query.limitPages;
   const email = req.query.email;
+  const sendEmail = req.query.sendEmail === "false" ? false : true;
 
   if (!utils.isLinkValid(link)) {
     return res.status(403).send({ message: "Link inválido" });
@@ -150,7 +152,7 @@ app.get("/reverseSearch/search", async (req, res) => {
 
   if (!fs.existsSync(jsonPath)) {
     console.log(`Realizando crawler de : ${link}`);
-    await reverseSearch.search(link.toString()).then((response) => {
+    await reverseSearch.search(link.toString(), limitPages).then((response) => {
       if (response.erro) {
         return res.status(403).send(response);
       }
@@ -168,22 +170,26 @@ app.get("/reverseSearch/search", async (req, res) => {
         "Resultado de pesquisa em anexo. ",
         {
           filename: `${linkHash}.csv`,
-          content: JSON.stringify(csv.jsontoCsv(response.results)),
+          content: csv.jsontoCsv(response.results),
         }
       );
 
       return res.status(200).send(response);
     });
   } else {
-    mail.sendMail(
-      email,
-      `Resultado de pesquisa (${linkHash})`,
-      "Resultado de pesquisa em anexo. ",
-      {
-        filename: `${linkHash}.csv`,
-        content: csv.jsontoCsv(jsonContent.results),
-      }
-    );
+    const csvText = csv.jsontoCsv(jsonContent.results);
+    fs.writeFileSync("csv_tmp.csv", csvText);
+    if (sendEmail) {
+      mail.sendMail(
+        email,
+        `Resultado de pesquisa (${linkHash})`,
+        "Resultado de pesquisa em anexo. ",
+        {
+          filename: `${linkHash}.csv`,
+          content: csv.jsontoCsv(jsonContent.results),
+        }
+      );
+    }
     res.status(200).send(jsonContent);
   }
 });
