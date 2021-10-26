@@ -1,23 +1,20 @@
 const puppeteer = require("puppeteer");
 const querystring = require("querystring");
+const { validate } = require("../helper/utils");
 const util = require("../helper/utils");
 
 const URL_GOOGLE_IMAGE_SEARCH = "https://www.google.com/imghp?hl=pt-BR";
-
 const BUTTON_SEARCH_SELECTOR = "#sbtc > div > div.dRYYxd > div.LM8x9c";
-
-const INPUT_SEARCH_SELECTOR = "#Ycyxxc";
+const INPUT_SEARCH_SELECTOR = "#sbtc > div > div.a4bIc > input";
 const SEARCH_BUTTON_REQUEST_SELECTOR = "#RZJ9Ub";
-
 const SELECTOR_NAVIGATORS_NEXT = "#pnnext";
-
 const COUNTER_SELECTOR = "g";
 
 async function search(link) {
   console.log("Iniciando");
   const browser = await await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: true,
+    headless: false,
   });
 
   try {
@@ -68,44 +65,45 @@ async function existetemProximaPagina(page) {
 }
 
 async function extraiInformacoesDaPagina(page) {
-  const result = await page.evaluate(() => {
-    let gElements = document.getElementsByClassName("g");
+  let contentHandles = await page.$x('//*[@class="g"]');
+  let results = [];
 
-    if (gElements === undefined) {
-      return;
+  const promisses = await contentHandles.map(async (handler, index) => {
+    let list = [];
+    let cite = await page.evaluate(
+      (el) => el.querySelector("cite").innerText,
+      handler
+    );
+    let img = await page.evaluate(
+      (el) => el.querySelector("img")?.src,
+      handler
+    );
+    let h3 = await page.evaluate(
+      (el) => el.querySelector("h3").innerText,
+      handler
+    );
+    let a = await page.evaluate((el) => el.querySelector("a")?.href, handler);
+
+    let text = await page.evaluate(
+      (el) => el.innerText.replace(/(\r\n|\n|\r)/gm, ""),
+      handler
+    );
+    if (img && a) {
+      const result = {
+        link: cite,
+        preview: img,
+        title: h3,
+        text: text,
+        host: new URL(a).host,
+      };
+      results.push(result);
     }
-
-    let resultsPages = [];
-
-    for (let index = 0; index < gElements.length; index++) {
-      let element = gElements[index];
-
-      const imgEl = element.getElementsByTagName("img")[0];
-      const link = element.getElementsByTagName("a")[0].href;
-      if (link !== undefined && imgEl !== undefined) {
-        if (link.length > 0) {
-          const preview = imgEl !== undefined ? imgEl.src : "";
-
-          const text =
-            element.lastElementChild.lastElementChild.lastElementChild.getElementsByClassName(
-              "aCOpRe"
-            )[0].textContent;
-
-          const host = new URL(link).host;
-
-          resultsPages.push({
-            host: host,
-            link: link,
-            text: text,
-            preview: preview,
-          });
-        }
-      }
-    }
-    return resultsPages;
   });
+  await Promise.all(promisses);
 
-  return result;
+  console.log(results);
+
+  return results;
 }
 
 async function buscaReversaEmLinkDeImagem(browser, link) {
@@ -116,11 +114,11 @@ async function buscaReversaEmLinkDeImagem(browser, link) {
   });
   await page.goto(URL_GOOGLE_IMAGE_SEARCH);
 
-  await page.waitFor(BUTTON_SEARCH_SELECTOR);
+  await page.waitFor("#sbtc > div > div.dRYYxd > div.ZaFQO > span");
 
-  await page.click(BUTTON_SEARCH_SELECTOR);
-  await page.waitForSelector(INPUT_SEARCH_SELECTOR);
-  await page.click(INPUT_SEARCH_SELECTOR);
+  await page.click("#sbtc > div > div.dRYYxd > div.ZaFQO > span");
+  await page.waitForSelector("#Ycyxxc");
+  await page.click("#Ycyxxc");
   await page.keyboard.type(link);
 
   await page.click(SEARCH_BUTTON_REQUEST_SELECTOR);

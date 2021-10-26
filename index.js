@@ -13,6 +13,7 @@ const reverseSearch = require("./api/controller/googleReverseSearchController");
 const mail = require("./api/controller/emailController");
 const csv = require("./api/controller/csvController");
 const CONST = require("./api/helper/Consts");
+const FileDownload = require("js-file-download");
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -150,6 +151,9 @@ app.get("/reverseSearch/search", async (req, res) => {
   if (!fs.existsSync(jsonPath)) {
     console.log(`Realizando crawler de : ${link}`);
     await reverseSearch.search(link.toString()).then((response) => {
+      if (response.erro) {
+        return res.status(403).send(response);
+      }
       //Write json
       fs.writeFileSync(jsonPath, JSON.stringify(response), function (err) {
         if (err) {
