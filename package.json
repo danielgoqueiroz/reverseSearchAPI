@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "nodemon --inspect index.js",
     "dev": "nodemon --inspect index.js",
-    "pm2": "pm2 start index.js --watch"
+    "pm2": "pm2 start index.js --watch",
+    "build": "npm run pm2"
   },
   "keywords": [
     "search",
