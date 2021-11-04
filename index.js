@@ -152,30 +152,31 @@ app.get("/reverseSearch/search", async (req, res) => {
 
   if (!fs.existsSync(jsonPath)) {
     console.log(`Realizando crawler de : ${link}`);
-    await reverseSearch.search(link.toString(), limitPages).then((response) => {
-      if (response.erro) {
-        return res.status(403).send(response);
-      }
-      //Write json
-      fs.writeFileSync(jsonPath, JSON.stringify(response), function (err) {
-        if (err) {
-          res
-            .status(403)
-            .send({ message: "Erro ao salvar resultado: ", erro: err });
+    await reverseSearch
+      .search(link.toString(), limitPages)
+      .then((response, error) => {
+        if (error || response.erro) {
+          return res.status(403).send(response);
         }
+        //Write json
+        fs.writeFileSync(jsonPath, JSON.stringify(response), function (err) {
+          if (err) {
+            res
+              .status(403)
+              .send({ message: "Erro ao salvar resultado: ", erro: err });
+          }
+        });
+        mail.sendMail(
+          email,
+          `Resultado de pesquisa (${linkHash})`,
+          "Resultado de pesquisa em anexo. ",
+          {
+            filename: `${linkHash}.csv`,
+            content: csv.jsontoCsv(response.results),
+          }
+        );
+        return res.status(200).send(response);
       });
-      mail.sendMail(
-        email,
-        `Resultado de pesquisa (${linkHash})`,
-        "Resultado de pesquisa em anexo. ",
-        {
-          filename: `${linkHash}.csv`,
-          content: csv.jsontoCsv(response.results),
-        }
-      );
-
-      return res.status(200).send(response);
-    });
   } else {
     const csvText = csv.jsontoCsv(jsonContent.results);
     fs.writeFileSync("csv_tmp.csv", csvText);

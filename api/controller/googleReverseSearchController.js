@@ -28,7 +28,9 @@ async function search(link, limitPages) {
     page = await buscaReversaEmLinkDeImagem(browser, link);
 
     let resultados = await extraiInformacoesDaPagina(page);
-
+    if (!limitPages) {
+      limitPages = 999;
+    }
     while ((await existetemProximaPagina(page)) && counter < limitPages) {
       counter++;
       console.log("Proxima página");
@@ -92,7 +94,7 @@ async function extraiInformacoesDaPagina(page) {
     );
     if (img && a) {
       const result = {
-        link: cite,
+        link: a,
         preview: img,
         title: h3,
         text: text,
