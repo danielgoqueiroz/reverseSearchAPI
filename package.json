@@ -8,7 +8,7 @@
     "serve": "nodemon --inspect index.js",
     "dev": "nodemon --inspect index.js",
     "pm2": "pm2 start index.js --watch",
-    "build": "npm run pm2"
+    "build": "npm serve"
   },
   "keywords": [
     "search",
