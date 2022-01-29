@@ -63,9 +63,6 @@ async function existetemProximaPagina(page) {
 }
 
 async function extraiInformacoesDaPagina(page) {
-
-
-  
   let resultsPages = [];
 
   let gAreas = await page.evaluate((sel) => {
@@ -181,8 +178,9 @@ async function buscaReversaEmLinkDeImagem(browser, link) {
   return page;
 }
 
-((async) => await extraiInformacoesDaPagina(
-  "https://okafala.files.wordpress.com/2014/08/virgin-virgo-new-moon-conjunct-sun.jpg"
-))
+(async) =>
+  await extraiInformacoesDaPagina(
+    "https://okafala.files.wordpress.com/2014/08/virgin-virgo-new-moon-conjunct-sun.jpg"
+  );
 
 // module.exports.search = search;

@@ -69,15 +69,13 @@ async function existetemProximaPagina(page) {
 }
 
 async function extraiInformacoesDaPagina(page) {
-  let contentHandles = await page.$x('//*[@class="g"]');
+  let contentHandles = await page.$x(
+    '//div[@role="main"]//div[contains(@class, "g ")]'
+  );
   let results = [];
 
   const promisses = await contentHandles.map(async (handler, index) => {
     let list = [];
-    let cite = await page.evaluate(
-      (el) => el.querySelector("cite").innerText,
-      handler
-    );
     let img = await page.evaluate(
       (el) => el.querySelector("img")?.src,
       handler
